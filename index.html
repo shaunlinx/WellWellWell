@@ -1,596 +1,622 @@
-import React, { useState, useEffect } from 'react';
-
-// --- 配色常量 (基于 Coolors Palette) ---
-const COLORS = {
-  highlight: '#00BFB2', // 亮青
-  dark: '#1A5E63',      // 深青
-  secondary: '#028090', // 海藻绿
-  light: '#F0F3BD',     // 嫩芽黄
-  pop: '#C64191',       // 洋红
-  white: '#FFFFFF',
-  offWhite: '#FAFAF9',
-};
-
-// --- 图标组件 (优化线条与风格) ---
-const IconWrapper = ({ children, className }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    width="24" 
-    height="24" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="1.8" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
-    className={className}
-  >
-    {children}
-  </svg>
-);
-
-// 通用图标集
-const Icons = {
-  Footprints: (props) => (
-    <IconWrapper {...props}>
-      <path d="M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 11 3.8 11 8c0 2.85-1.21 7.1-2.8 11.54C11 21.37 12 23 12 23" />
-      <path d="M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 13 7.8 13 12c0 2.85 1.21 7.1 2.8 11.54C13 25.37 12 27 12 27" transform="translate(0 -4)" />
-    </IconWrapper>
-  ),
-  Users: (props) => (
-    <IconWrapper {...props}>
-      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-    </IconWrapper>
-  ),
-  Cpu: (props) => (
-    <IconWrapper {...props}>
-      <rect x="4" y="4" width="16" height="16" rx="2" />
-      <path d="M9 9h6v6H9z" />
-      <path d="M15 2v2M15 20v2M2 15h2M2 9h2M20 15h2M20 9h2M9 2v2M9 20v2" />
-    </IconWrapper>
-  ),
-  Target: (props) => (
-    <IconWrapper {...props}>
-      <circle cx="12" cy="12" r="10" />
-      <path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" />
-      <path d="M12 2v2M12 20v2M2 12h2M20 12h2" />
-    </IconWrapper>
-  ),
-  Smartphone: (props) => (
-    <IconWrapper {...props}>
-      <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
-      <path d="M12 18h.01" />
-    </IconWrapper>
-  ),
-  Database: (props) => (
-    <IconWrapper {...props}>
-      <ellipse cx="12" cy="5" rx="9" ry="3" />
-      <path d="M3 5V19A9 3 0 0 0 21 19V5" />
-      <path d="M3 12A9 3 0 0 0 21 12" />
-    </IconWrapper>
-  ),
-  MapPin: (props) => (
-    <IconWrapper {...props}>
-      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-      <circle cx="12" cy="10" r="3" />
-    </IconWrapper>
-  ),
-  ArrowRight: (props) => (
-    <IconWrapper {...props}>
-      <path d="M5 12h14" />
-      <path d="m12 5 7 7-7 7" />
-    </IconWrapper>
-  ),
-  TrendingUp: (props) => (
-    <IconWrapper {...props}>
-      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
-      <polyline points="16 7 22 7 22 13" />
-    </IconWrapper>
-  ),
-  ShieldCheck: (props) => (
-    <IconWrapper {...props}>
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
-      <path d="m9 12 2 2 4-4" />
-    </IconWrapper>
-  ),
-  Heart: (props) => (
-    <IconWrapper {...props}>
-      <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
-    </IconWrapper>
-  ),
-  Sparkles: (props) => (
-     <IconWrapper {...props}>
-      <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
-     </IconWrapper>
-  )
-};
-
-// --- 背景装饰 SVG ---
-const AbstractBg = () => (
-  <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-[0.03]">
-    <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-      <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" strokeWidth="1"/>
-      </pattern>
-      <rect width="100%" height="100%" fill="url(#grid)" />
-      <circle cx="80%" cy="20%" r="300" fill="currentColor" className="opacity-30 blur-3xl" />
-      <circle cx="10%" cy="80%" r="200" fill="currentColor" className="opacity-30 blur-3xl" />
-    </svg>
-  </div>
-);
-
-// --- 通用样式组件 ---
-
-const SectionTitle = ({ children, subtitle, dark = false }) => (
-  <div className="mb-10 relative z-10">
-    <div className="flex items-center gap-3 mb-3">
-      <div className={`h-[2px] w-12 ${dark ? 'bg-[#00BFB2]' : 'bg-[#C64191]'}`}></div>
-      <h2 className={`text-xs font-bold tracking-[0.2em] uppercase ${dark ? 'text-[#00BFB2]' : 'text-[#C64191]'}`}>
-        {subtitle}
-      </h2>
-    </div>
-    <h1 className={`text-4xl md:text-5xl font-serif font-medium leading-tight ${dark ? 'text-[#F0F3BD]' : 'text-[#1A5E63]'}`}>
-      {children}
-    </h1>
-  </div>
-);
-
-const Card = ({ children, className = "", variant = "white" }) => {
-  const styles = {
-    white: "bg-white border-[#F0F3BD]",
-    light: "bg-[#F0F3BD] border-transparent",
-    dark: "bg-[#1A5E63] text-white border-[#028090]",
-    pop: "bg-[#C64191] text-white border-transparent"
-  };
-
-  return (
-    <div className={`p-8 rounded-xl border shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${styles[variant]} ${className}`}>
-      {children}
-    </div>
-  );
-};
-
-// --- 主演示组件 ---
-
-const Presentation = () => {
-  const [activeTab, setActiveTab] = useState('cover');
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const navItems = [
-    { id: 'cover', label: '首页 · Cover' },
-    { id: 'why', label: '背景 · Context' },
-    { id: 'what', label: '模式 · Model' },
-    { id: 'how', label: '规划 · Plan' },
-    { id: 'needs', label: '资源 · Needs' },
-    { id: 'summary', label: '结语 · Vision' },
-  ];
-
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'cover': return <CoverSlide onStart={() => setActiveTab('why')} />;
-      case 'why': return <WhySlide />;
-      case 'what': return <WhatSlide />;
-      case 'how': return <HowSlide />;
-      case 'needs': return <NeedsSlide />;
-      case 'summary': return <SummarySlide />;
-      default: return <CoverSlide />;
-    }
-  };
-
-  if (!mounted) return <div className="p-10 text-center text-[#1A5E63]">Loading...</div>;
-
-  return (
-    <div className="flex flex-col min-h-screen font-sans selection:bg-[#00BFB2] selection:text-white" style={{ backgroundColor: COLORS.offWhite, color: COLORS.dark }}>
-      
-      {/* 顶部导航 */}
-      <nav className="fixed top-0 left-0 right-0 z-50 px-4 md:px-8 py-4 flex justify-between items-center bg-[#FAFAF9]/90 backdrop-blur-md border-b border-[#1A5E63]/10">
-        <div className="flex items-center gap-2 text-[#1A5E63]">
-          <div className="bg-[#1A5E63] text-[#F0F3BD] p-1.5 rounded-lg">
-            <Icons.Footprints size={20} />
-          </div>
-          <span className="font-bold text-lg tracking-tight">行行行 <span className="opacity-40 font-serif font-normal text-base">| 小城漫步集</span></span>
-        </div>
-        
-        <div className="hidden md:flex gap-1">
-          {navItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`px-4 py-1.5 rounded-full text-xs font-bold tracking-wide transition-all duration-300 ${
-                activeTab === item.id 
-                  ? 'bg-[#1A5E63] text-[#F0F3BD] shadow-md' 
-                  : 'text-[#028090] hover:bg-[#F0F3BD] hover:text-[#1A5E63]'
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-      </nav>
-
-      {/* 移动端导航 */}
-      <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90%] bg-[#1A5E63] p-2 rounded-full shadow-2xl flex justify-between items-center px-4">
-        {navItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => setActiveTab(item.id)}
-            className={`w-2 h-2 rounded-full transition-all duration-300 ${activeTab === item.id ? 'bg-[#C64191] w-4' : 'bg-[#028090]'}`}
-            aria-label={item.label}
-          />
-        ))}
-        <span className="text-[10px] text-[#F0F3BD] font-bold ml-2 uppercase tracking-wider">
-          {navItems.find(n => n.id === activeTab)?.label.split(' · ')[1]}
-        </span>
-      </div>
-
-      {/* 主画布 */}
-      <main className="flex-grow flex flex-col relative pt-20 pb-8 px-4 md:px-12 max-w-7xl mx-auto w-full">
-         <div className="flex-grow relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {renderContent()}
-         </div>
-         <AbstractBg />
-      </main>
-    </div>
-  );
-};
-
-// 1. 封面页
-const CoverSlide = ({ onStart }) => (
-  <div className="h-full min-h-[70vh] flex flex-col justify-center relative">
-    {/* 装饰大字 */}
-    <div className="absolute top-0 right-0 font-serif text-[120px] md:text-[240px] leading-none text-[#F0F3BD] select-none -z-10 mix-blend-multiply opacity-80">
-      2026
-    </div>
-
-    <div className="max-w-4xl space-y-8 relative">
-      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#1A5E63] text-[#F0F3BD] text-xs font-bold uppercase tracking-[0.2em] shadow-lg">
-         <Icons.Sparkles size={14} />
-         Project Proposal
-      </div>
-      
-      <h1 className="text-6xl md:text-8xl font-serif text-[#1A5E63] leading-[1.1] tracking-tight">
-        <span className="block text-3xl md:text-4xl text-[#028090] font-sans font-light mb-2 tracking-normal">安可青年 · 特别企划</span>
-        行行行<br />
-        <span className="text-[#C64191] italic pr-4">小城</span>漫步集
-      </h1>
-      
-      <div className="flex items-start gap-4 max-w-2xl mt-8">
-        <div className="w-1 h-24 bg-[#00BFB2]"></div>
-        <p className="text-xl text-[#028090] font-light leading-relaxed">
-          从“行走”到“连接”：<br/>
-          一次技术赋能人文、数据驱动公益感知的<span className="font-bold text-[#1A5E63] border-b-2 border-[#F0F3BD]">系统实验</span>。
-        </p>
-      </div>
-
-      <div className="pt-12">
-        <button 
-          onClick={onStart}
-          className="group relative inline-flex items-center justify-center px-10 py-5 bg-[#C64191] text-white rounded-none hover:bg-[#A33476] transition-all duration-300 shadow-[8px_8px_0px_0px_#1A5E63] hover:shadow-[4px_4px_0px_0px_#1A5E63] hover:translate-x-[2px] hover:translate-y-[2px]"
-        >
-          <span className="relative flex items-center gap-3 font-bold text-lg tracking-wide">
-            开始汇报
-            <Icons.ArrowRight size={20} />
-          </span>
-        </button>
-      </div>
-      
-      {/* 底部信息栏 */}
-      <div className="absolute -bottom-24 left-0 right-0 border-t border-[#1A5E63]/20 pt-6 flex gap-12 text-xs font-bold tracking-widest text-[#1A5E63]/60 uppercase">
-        <div>Presented By / 项目负责人</div>
-        <div>Date / Jan 2026</div>
-        <div>Type / Technology for Good</div>
-      </div>
-    </div>
-  </div>
-);
-
-// 2. 战略背景页
-const WhySlide = () => (
-  <div>
-    <SectionTitle subtitle="Strategy Context">
-      重建数字时代的<span className="italic text-[#028090] font-serif">“附近”</span>
-    </SectionTitle>
-
-    <div className="grid md:grid-cols-12 gap-6 md:h-[500px]">
-      {/* 左侧主要洞察 - 深色卡片 */}
-      <Card variant="dark" className="md:col-span-7 flex flex-col justify-between relative overflow-hidden group">
-        <div className="absolute -right-10 -bottom-20 text-[#00BFB2] opacity-10 transform rotate-12 transition-transform duration-700 group-hover:rotate-0 group-hover:scale-110">
-          <Icons.Target size={300} />
-        </div>
-        
-        <div>
-          <div className="flex items-center gap-2 text-[#00BFB2] mb-6">
-             <div className="w-2 h-2 rounded-full bg-[#C64191]"></div>
-             <span className="text-xs font-bold tracking-[0.2em] uppercase">Core Insight</span>
-          </div>
-          <h3 className="text-2xl md:text-3xl font-serif leading-snug mb-8 text-[#F0F3BD]">
-            “我们比任何时候都更紧密地连接在网络上，却比任何时候都更孤独地生活在现实中。”
-          </h3>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-8 border-t border-[#028090] pt-8">
-          <div>
-            <div className="text-3xl font-light text-white mb-1">社交悬浮</div>
-            <div className="text-[10px] text-[#00BFB2] uppercase tracking-wider opacity-80">Social Suspension</div>
-          </div>
-          <div>
-            <div className="text-3xl font-light text-white mb-1">归属缺失</div>
-            <div className="text-[10px] text-[#00BFB2] uppercase tracking-wider opacity-80">Lack of Belonging</div>
-          </div>
-        </div>
-      </Card>
-
-      {/* 右侧痛点与方案 */}
-      <div className="md:col-span-5 flex flex-col gap-6">
-        <Card variant="white" className="flex-1 border-l-4 border-l-[#C64191]">
-           <div className="flex flex-col h-full justify-center">
-             <div className="flex items-center gap-2 mb-3 text-[#C64191]">
-               <Icons.Users size={20} />
-               <h4 className="font-bold uppercase tracking-wider text-sm">传统公益痛点</h4>
-             </div>
-             <p className="text-sm text-[#1A5E63] leading-relaxed">
-               参与门槛高，形式单一，难以激发非高线城市青年的持续认同。“外部移植”的活动往往水土不服。
-             </p>
-           </div>
-        </Card>
-        
-        <Card variant="light" className="flex-1 border-l-4 border-l-[#00BFB2]">
-           <div className="flex flex-col h-full justify-center">
-             <div className="flex items-center gap-2 mb-3 text-[#1A5E63]">
-               <Icons.Cpu size={20} />
-               <h4 className="font-bold uppercase tracking-wider text-sm">技术向善解法</h4>
-             </div>
-             <p className="text-sm text-[#1A5E63] leading-relaxed">
-               利用 AI 降低记录门槛，让“行走”变成数据，让“故事”变成资产。从被动接受转为主动构建。
-             </p>
-           </div>
-        </Card>
-      </div>
-    </div>
-  </div>
-);
-
-// 3. 模式创新页
-const WhatSlide = () => (
-  <div className="h-full flex flex-col">
-    <SectionTitle subtitle="Operational Model">
-      数字与物理的<span className="text-[#C64191] bg-[#F0F3BD] px-2 italic">双向循环</span>
-    </SectionTitle>
-
-    <div className="flex-grow flex items-center justify-center relative py-4">
-      <div className="relative w-full grid md:grid-cols-3 gap-6 items-stretch">
-        
-        {/* Step 1: Online */}
-        <div className="bg-white p-8 rounded-none border border-[#1A5E63]/20 hover:border-[#00BFB2] transition-colors relative group">
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-100 transition-opacity text-[#00BFB2]">
-            <span className="text-4xl font-serif font-bold">01</span>
-          </div>
-          <div className="w-12 h-12 bg-[#00BFB2]/10 text-[#00BFB2] flex items-center justify-center rounded-full mb-6">
-            <Icons.Smartphone size={24} />
-          </div>
-          <h3 className="text-xl font-bold text-[#1A5E63] mb-1">数字层 (Online)</h3>
-          <p className="text-xs text-[#028090] font-bold uppercase tracking-wider mb-6">Initiate & Record</p>
-          <ul className="text-sm text-[#1A5E63]/80 space-y-3">
-            <li className="flex gap-2 items-center"><span className="w-1.5 h-1.5 bg-[#00BFB2] rounded-full"></span>小程序预约报名</li>
-            <li className="flex gap-2 items-center"><span className="w-1.5 h-1.5 bg-[#00BFB2] rounded-full"></span><strong>AI 助手</strong> 辅助记录</li>
-            <li className="flex gap-2 items-center"><span className="w-1.5 h-1.5 bg-[#00BFB2] rounded-full"></span>内容云端共创</li>
-          </ul>
-        </div>
-
-        {/* Center: Engine */}
-        <div className="flex flex-col justify-center items-center relative z-10 py-8 md:py-0">
-           {/* 连接线 */}
-           <div className="absolute top-1/2 left-0 w-full h-[1px] bg-[#1A5E63]/20 -z-10 hidden md:block"></div>
-           
-           <div className="bg-[#1A5E63] text-[#F0F3BD] p-6 rounded-full shadow-[0_0_0_8px_#F0F3BD] w-48 h-48 flex flex-col items-center justify-center text-center gap-2 hover:scale-105 transition-transform duration-500">
-             <Icons.Database size={32} className="text-[#00BFB2]" />
-             <div className="font-serif font-bold text-lg leading-tight">城事<br/>档案库</div>
-             <div className="text-[9px] uppercase tracking-widest text-[#00BFB2]">Data Asset</div>
-           </div>
-        </div>
-
-        {/* Step 3: Offline */}
-        <div className="bg-white p-8 rounded-none border border-[#1A5E63]/20 hover:border-[#C64191] transition-colors relative group">
-           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-100 transition-opacity text-[#C64191]">
-            <span className="text-4xl font-serif font-bold">02</span>
-          </div>
-          <div className="w-12 h-12 bg-[#C64191]/10 text-[#C64191] flex items-center justify-center rounded-full mb-6">
-            <Icons.MapPin size={24} />
-          </div>
-          <h3 className="text-xl font-bold text-[#1A5E63] mb-1">物理层 (Offline)</h3>
-          <p className="text-xs text-[#C64191] font-bold uppercase tracking-wider mb-6">Connect & Experience</p>
-          <ul className="text-sm text-[#1A5E63]/80 space-y-3">
-            <li className="flex gap-2 items-center"><span className="w-1.5 h-1.5 bg-[#C64191] rounded-full"></span>城市行走实施</li>
-            <li className="flex gap-2 items-center"><span className="w-1.5 h-1.5 bg-[#C64191] rounded-full"></span><strong>“串门”</strong> 真实对话</li>
-            <li className="flex gap-2 items-center"><span className="w-1.5 h-1.5 bg-[#C64191] rounded-full"></span>场景体验与展览</li>
-          </ul>
-        </div>
-
-      </div>
-    </div>
-
-    {/* 数据条 */}
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
-      {[
-        { num: '200+', label: '青年行动者', color: '#1A5E63' },
-        { num: '12+', label: '标准化路线', color: '#028090' },
-        { num: '30+', label: '多媒体记录', color: '#00BFB2' },
-        { num: '5000+', label: '数字足迹触达', color: '#C64191' }
-      ].map((item, i) => (
-        <div key={i} className="bg-[#FAFAF9] p-4 border-l-2" style={{ borderColor: item.color }}>
-          <div className="text-2xl font-serif font-bold mb-1" style={{ color: item.color }}>{item.num}</div>
-          <div className="text-xs font-bold text-[#1A5E63]/60 uppercase tracking-wider">{item.label}</div>
-        </div>
-      ))}
-    </div>
-  </div>
-);
-
-// 4. 执行规划页
-const HowSlide = () => {
-  const phases = [
-    { id: '01', title: '筹备与征集', date: 'Feb - Mar', desc: '发布路线征集令，启动首批评审；上线小程序MVP。', highlight: false },
-    { id: '02', title: '行走与记录', date: 'Apr - Jul', desc: '每月高频组织线下行走；全员配备AI助手实现“过程即记录”。', highlight: false },
-    { id: '03', title: '策展与发布', date: 'Aug - Sep', desc: '99公益节爆点：发布“行行行城事地图”；举办线下共创展览。', highlight: true },
-    { id: '04', title: '运营与迭代', date: 'Oct - Jan', desc: '开放路线自主运维；建立“城行小组”自运转机制。', highlight: false },
-  ];
-
-  return (
-    <div className="h-full flex flex-col">
-      <SectionTitle subtitle="Execution Roadmap">
-        2026 执行路线图
-      </SectionTitle>
-
-      <div className="flex-grow grid md:grid-cols-4 gap-4 items-stretch">
-        {phases.map((phase) => (
-          <div 
-            key={phase.id} 
-            className={`relative p-6 flex flex-col justify-between transition-all duration-500 group border-t-4 hover:-translate-y-2 ${
-              phase.highlight 
-                ? 'bg-[#1A5E63] text-[#F0F3BD] border-t-[#C64191] shadow-xl' 
-                : 'bg-white text-[#1A5E63] border-t-[#028090] shadow-sm hover:shadow-md'
-            }`}
-          >
-            <div>
-              <div className="flex justify-between items-baseline mb-8">
-                <span className={`text-6xl font-serif font-bold opacity-30 ${phase.highlight ? 'text-[#00BFB2]' : 'text-[#028090]'}`}>
-                  {phase.id}
-                </span>
-                <span className={`text-[10px] font-bold uppercase tracking-widest py-1 px-2 border ${
-                  phase.highlight ? 'border-[#00BFB2] text-[#00BFB2]' : 'border-[#1A5E63]/20 text-[#1A5E63]/60'
-                }`}>
-                  {phase.date}
-                </span>
-              </div>
-              <h3 className="text-lg font-bold mb-3 tracking-wide">{phase.title}</h3>
-              <p className={`text-sm leading-relaxed ${phase.highlight ? 'text-[#F0F3BD]/80' : 'text-[#1A5E63]/70'}`}>
-                {phase.desc}
-              </p>
-            </div>
-            
-            {phase.highlight && (
-              <div className="mt-6 pt-4 border-t border-[#F0F3BD]/20 text-xs font-bold text-[#C64191] uppercase tracking-widest flex items-center gap-2">
-                <Icons.Sparkles size={14} /> Key Milestone
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-// 5. 资源风控页
-const NeedsSlide = () => (
-  <div className="h-full flex flex-col">
-    <SectionTitle subtitle="Resource Allocation">
-      高杠杆投入：<br/>小额资助撬动<span className="text-[#C64191] font-serif italic pr-2">海量资产</span>
-    </SectionTitle>
-
-    <div className="grid md:grid-cols-2 gap-8 h-full">
-      {/* 预算部分 */}
-      <div className="space-y-8 bg-[#F0F3BD]/30 p-8 border border-[#F0F3BD] rounded-xl">
-        <div className="flex items-end justify-between border-b-2 border-[#1A5E63] pb-4">
-          <h3 className="text-xl font-bold text-[#1A5E63]">总计预估</h3>
-          <div className="text-4xl font-serif font-bold text-[#C64191]">¥35,000</div>
-        </div>
-        
-        <div className="space-y-6 pt-2">
-          {[
-            { label: '青年路线资助', val: '¥9,600', sub: '12组 x 800元' },
-            { label: '展览制作费', val: '¥15,000', sub: '物料/场地/搭建' },
-            { label: '传播与推广', val: '¥10,000', sub: '线上投放/社群' }
-          ].map((item, i) => (
-            <div key={i} className="flex justify-between items-center">
-              <div>
-                <div className="font-bold text-[#1A5E63] text-lg">{item.label}</div>
-                <div className="text-xs text-[#028090] font-bold uppercase mt-1">{item.sub}</div>
-              </div>
-              <div className="font-mono font-medium text-[#1A5E63] bg-white px-4 py-2 shadow-sm">
-                {item.val}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* 需求与风控 */}
-      <div className="flex flex-col gap-6">
-        <Card variant="white" className="flex-1 border-l-4 border-l-[#00BFB2] flex flex-col justify-center">
-             <h4 className="font-bold text-[#1A5E63] mb-3 flex items-center gap-2 text-lg">
-               <Icons.Cpu size={24} className="text-[#00BFB2]" /> 技术策略
-             </h4>
-             <p className="text-sm text-[#1A5E63]/80 leading-relaxed">
-               拒绝重度开发。复用成熟低代码平台或 API（高德地图、钉钉语音转写），仅开发轻量级小程序前端，最大化降低技术成本。
-             </p>
-        </Card>
-        
-        <Card variant="white" className="flex-1 border-l-4 border-l-[#C64191] flex flex-col justify-center">
-             <h4 className="font-bold text-[#1A5E63] mb-3 flex items-center gap-2 text-lg">
-               <Icons.ShieldCheck size={24} className="text-[#C64191]" /> 风险控制
-             </h4>
-             <ul className="text-sm text-[#1A5E63]/80 space-y-3">
-               <li className="flex gap-3 items-center">
-                 <span className="text-[#C64191] font-bold">/</span> 
-                 <span><strong>安全性：</strong>强制保险 + 行前培训</span>
-               </li>
-               <li className="flex gap-3 items-center">
-                 <span className="text-[#C64191] font-bold">/</span> 
-                 <span><strong>同质化：</strong>设立“场景多样性”评审标准</span>
-               </li>
-               <li className="flex gap-3 items-center">
-                 <span className="text-[#C64191] font-bold">/</span> 
-                 <span><strong>可持续：</strong>工具包开源，赋能其他县域复制</span>
-               </li>
-             </ul>
-        </Card>
-      </div>
-    </div>
-  </div>
-);
-
-// 6. 结语
-const SummarySlide = () => (
-  <div className="h-full flex flex-col justify-center items-center text-center max-w-4xl mx-auto">
-    <div className="mb-8 relative group">
-       <div className="absolute inset-0 bg-[#C64191] blur-[60px] opacity-20 group-hover:opacity-40 transition-opacity duration-1000"></div>
-       <Icons.Heart size={80} className="text-[#C64191] relative z-10 drop-shadow-2xl" fill="#C64191" />
-    </div>
-
-    <h2 className="text-4xl md:text-6xl font-serif text-[#1A5E63] mb-8 leading-tight">
-      这不仅仅是一个项目，<br/>
-      而是一份<span className="text-[#F0F3BD] bg-[#1A5E63] px-4 italic">技术向善</span>的答卷。
-    </h2>
-
-    <p className="text-xl text-[#028090] max-w-2xl mb-16 leading-relaxed">
-      我们用数据连接孤岛，用行走丈量温度。<br/>
-      安可青年 · 行行行 —— 让每一个脚印都成为社区的数字资产。
-    </p>
-
-    <div className="grid md:grid-cols-3 gap-8 text-left w-full border-t border-[#1A5E63]/20 pt-8">
-      {[
-        { title: '有温度的数字化', desc: 'Tech for Connection' },
-        { title: '可迭代的创新', desc: 'Scalable Model' },
-        { title: '可视化的影响力', desc: 'Visualized Impact' }
-      ].map((item, i) => (
-        <div key={i} className="group">
-          <div className="font-bold text-[#1A5E63] text-lg group-hover:text-[#C64191] transition-colors">{item.title}</div>
-          <div className="text-xs font-bold text-[#00BFB2] uppercase tracking-widest mt-2">{item.desc}</div>
-        </div>
-      ))}
-    </div>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>「行行行」小城漫步集 - 2026年度提案</title>
     
-    <div className="mt-20 text-[#1A5E63]/30 text-[10px] tracking-[0.3em] uppercase">
-      End of Proposal · 2026
-    </div>
-  </div>
-);
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 引入 React 和 Babel -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-export default Presentation;
+    <!-- 预设字体和样式 -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Inter:wght@400;500;700&display=swap');
+        
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+        h1, h2, h3, .font-serif {
+            font-family: 'Noto Serif SC', serif;
+        }
+        
+        /* 隐藏滚动条但保留功能 */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- 配色常量 (基于 Coolors Palette) ---
+        const COLORS = {
+            highlight: '#00BFB2', // 亮青
+            dark: '#1A5E63',      // 深青
+            secondary: '#028090', // 海藻绿
+            light: '#F0F3BD',     // 嫩芽黄
+            pop: '#C64191',       // 洋红
+            white: '#FFFFFF',
+            offWhite: '#FAFAF9',
+        };
+
+        // --- 图标组件 ---
+        const IconWrapper = ({ children, className }) => (
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width="24" 
+                height="24" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="1.8" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                className={className}
+            >
+                {children}
+            </svg>
+        );
+
+        const Icons = {
+            Footprints: (props) => (
+                <IconWrapper {...props}>
+                    <path d="M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 11 3.8 11 8c0 2.85-1.21 7.1-2.8 11.54C11 21.37 12 23 12 23" />
+                    <path d="M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 13 7.8 13 12c0 2.85 1.21 7.1 2.8 11.54C13 25.37 12 27 12 27" transform="translate(0 -4)" />
+                </IconWrapper>
+            ),
+            Users: (props) => (
+                <IconWrapper {...props}>
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </IconWrapper>
+            ),
+            Cpu: (props) => (
+                <IconWrapper {...props}>
+                    <rect x="4" y="4" width="16" height="16" rx="2" />
+                    <path d="M9 9h6v6H9z" />
+                    <path d="M15 2v2M15 20v2M2 15h2M2 9h2M20 15h2M20 9h2M9 2v2M9 20v2" />
+                </IconWrapper>
+            ),
+            Target: (props) => (
+                <IconWrapper {...props}>
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" />
+                    <path d="M12 2v2M12 20v2M2 12h2M20 12h2" />
+                </IconWrapper>
+            ),
+            Smartphone: (props) => (
+                <IconWrapper {...props}>
+                    <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
+                    <path d="M12 18h.01" />
+                </IconWrapper>
+            ),
+            Database: (props) => (
+                <IconWrapper {...props}>
+                    <ellipse cx="12" cy="5" rx="9" ry="3" />
+                    <path d="M3 5V19A9 3 0 0 0 21 19V5" />
+                    <path d="M3 12A9 3 0 0 0 21 12" />
+                </IconWrapper>
+            ),
+            MapPin: (props) => (
+                <IconWrapper {...props}>
+                    <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                    <circle cx="12" cy="10" r="3" />
+                </IconWrapper>
+            ),
+            ArrowRight: (props) => (
+                <IconWrapper {...props}>
+                    <path d="M5 12h14" />
+                    <path d="m12 5 7 7-7 7" />
+                </IconWrapper>
+            ),
+            TrendingUp: (props) => (
+                <IconWrapper {...props}>
+                    <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+                    <polyline points="16 7 22 7 22 13" />
+                </IconWrapper>
+            ),
+            ShieldCheck: (props) => (
+                <IconWrapper {...props}>
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+                    <path d="m9 12 2 2 4-4" />
+                </IconWrapper>
+            ),
+            Heart: (props) => (
+                <IconWrapper {...props}>
+                    <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+                </IconWrapper>
+            ),
+            Sparkles: (props) => (
+                <IconWrapper {...props}>
+                    <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+                </IconWrapper>
+            )
+        };
+
+        // --- 背景装饰 SVG ---
+        const AbstractBg = () => (
+            <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-[0.03]">
+                <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" strokeWidth="1"/>
+                    </pattern>
+                    <rect width="100%" height="100%" fill="url(#grid)" />
+                    <circle cx="80%" cy="20%" r="300" fill="currentColor" className="opacity-30 blur-3xl" />
+                    <circle cx="10%" cy="80%" r="200" fill="currentColor" className="opacity-30 blur-3xl" />
+                </svg>
+            </div>
+        );
+
+        // --- 通用样式组件 ---
+        const SectionTitle = ({ children, subtitle, dark = false }) => (
+            <div className="mb-10 relative z-10">
+                <div className="flex items-center gap-3 mb-3">
+                    <div className={`h-[2px] w-12 ${dark ? 'bg-[#00BFB2]' : 'bg-[#C64191]'}`}></div>
+                    <h2 className={`text-xs font-bold tracking-[0.2em] uppercase ${dark ? 'text-[#00BFB2]' : 'text-[#C64191]'}`}>
+                        {subtitle}
+                    </h2>
+                </div>
+                <h1 className={`text-4xl md:text-5xl font-serif font-medium leading-tight ${dark ? 'text-[#F0F3BD]' : 'text-[#1A5E63]'}`}>
+                    {children}
+                </h1>
+            </div>
+        );
+
+        const Card = ({ children, className = "", variant = "white" }) => {
+            const styles = {
+                white: "bg-white border-[#F0F3BD]",
+                light: "bg-[#F0F3BD] border-transparent",
+                dark: "bg-[#1A5E63] text-white border-[#028090]",
+                pop: "bg-[#C64191] text-white border-transparent"
+            };
+
+            return (
+                <div className={`p-8 rounded-xl border shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${styles[variant]} ${className}`}>
+                    {children}
+                </div>
+            );
+        };
+
+        // --- 页面组件 ---
+
+        const CoverSlide = ({ onStart }) => (
+            <div className="h-full min-h-[70vh] flex flex-col justify-center relative">
+                <div className="absolute top-0 right-0 font-serif text-[120px] md:text-[240px] leading-none text-[#F0F3BD] select-none -z-10 mix-blend-multiply opacity-80">
+                    2026
+                </div>
+
+                <div className="max-w-4xl space-y-8 relative">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#1A5E63] text-[#F0F3BD] text-xs font-bold uppercase tracking-[0.2em] shadow-lg">
+                        <Icons.Sparkles size={14} />
+                        Project Proposal
+                    </div>
+                    
+                    <h1 className="text-6xl md:text-8xl font-serif text-[#1A5E63] leading-[1.1] tracking-tight">
+                        <span className="block text-3xl md:text-4xl text-[#028090] font-sans font-light mb-2 tracking-normal">安可青年 · 特别企划</span>
+                        行行行<br />
+                        <span className="text-[#C64191] italic pr-4">小城</span>漫步集
+                    </h1>
+                    
+                    <div className="flex items-start gap-4 max-w-2xl mt-8">
+                        <div className="w-1 h-24 bg-[#00BFB2]"></div>
+                        <p className="text-xl text-[#028090] font-light leading-relaxed">
+                            从“行走”到“连接”：<br/>
+                            一次技术赋能人文、数据驱动公益感知的<span className="font-bold text-[#1A5E63] border-b-2 border-[#F0F3BD]">系统实验</span>。
+                        </p>
+                    </div>
+
+                    <div className="pt-12">
+                        <button 
+                            onClick={onStart}
+                            className="group relative inline-flex items-center justify-center px-10 py-5 bg-[#C64191] text-white rounded-none hover:bg-[#A33476] transition-all duration-300 shadow-[8px_8px_0px_0px_#1A5E63] hover:shadow-[4px_4px_0px_0px_#1A5E63] hover:translate-x-[2px] hover:translate-y-[2px]"
+                        >
+                            <span className="relative flex items-center gap-3 font-bold text-lg tracking-wide">
+                                开始汇报
+                                <Icons.ArrowRight size={20} />
+                            </span>
+                        </button>
+                    </div>
+                    
+                    <div className="absolute -bottom-24 left-0 right-0 border-t border-[#1A5E63]/20 pt-6 flex gap-12 text-xs font-bold tracking-widest text-[#1A5E63]/60 uppercase">
+                        <div>Presented By / 项目负责人</div>
+                        <div>Date / Jan 2026</div>
+                        <div>Type / Technology for Good</div>
+                    </div>
+                </div>
+            </div>
+        );
+
+        const WhySlide = () => (
+            <div>
+                <SectionTitle subtitle="Strategy Context">
+                    重建数字时代的<span className="italic text-[#028090] font-serif">“附近”</span>
+                </SectionTitle>
+
+                <div className="grid md:grid-cols-12 gap-6 md:h-[500px]">
+                    <Card variant="dark" className="md:col-span-7 flex flex-col justify-between relative overflow-hidden group">
+                        <div className="absolute -right-10 -bottom-20 text-[#00BFB2] opacity-10 transform rotate-12 transition-transform duration-700 group-hover:rotate-0 group-hover:scale-110">
+                            <Icons.Target size={300} />
+                        </div>
+                        
+                        <div>
+                            <div className="flex items-center gap-2 text-[#00BFB2] mb-6">
+                                <div className="w-2 h-2 rounded-full bg-[#C64191]"></div>
+                                <span className="text-xs font-bold tracking-[0.2em] uppercase">Core Insight</span>
+                            </div>
+                            <h3 className="text-2xl md:text-3xl font-serif leading-snug mb-8 text-[#F0F3BD]">
+                                “我们比任何时候都更紧密地连接在网络上，却比任何时候都更孤独地生活在现实中。”
+                            </h3>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-8 border-t border-[#028090] pt-8">
+                            <div>
+                                <div className="text-3xl font-light text-white mb-1">社交悬浮</div>
+                                <div className="text-[10px] text-[#00BFB2] uppercase tracking-wider opacity-80">Social Suspension</div>
+                            </div>
+                            <div>
+                                <div className="text-3xl font-light text-white mb-1">归属缺失</div>
+                                <div className="text-[10px] text-[#00BFB2] uppercase tracking-wider opacity-80">Lack of Belonging</div>
+                            </div>
+                        </div>
+                    </Card>
+
+                    <div className="md:col-span-5 flex flex-col gap-6">
+                        <Card variant="white" className="flex-1 border-l-4 border-l-[#C64191]">
+                            <div className="flex flex-col h-full justify-center">
+                                <div className="flex items-center gap-2 mb-3 text-[#C64191]">
+                                    <Icons.Users size={20} />
+                                    <h4 className="font-bold uppercase tracking-wider text-sm">传统公益痛点</h4>
+                                </div>
+                                <p className="text-sm text-[#1A5E63] leading-relaxed">
+                                    参与门槛高，形式单一，难以激发非高线城市青年的持续认同。“外部移植”的活动往往水土不服。
+                                </p>
+                            </div>
+                        </Card>
+                        
+                        <Card variant="light" className="flex-1 border-l-4 border-l-[#00BFB2]">
+                            <div className="flex flex-col h-full justify-center">
+                                <div className="flex items-center gap-2 mb-3 text-[#1A5E63]">
+                                    <Icons.Cpu size={20} />
+                                    <h4 className="font-bold uppercase tracking-wider text-sm">技术向善解法</h4>
+                                </div>
+                                <p className="text-sm text-[#1A5E63] leading-relaxed">
+                                    利用 AI 降低记录门槛，让“行走”变成数据，让“故事”变成资产。从被动接受转为主动构建。
+                                </p>
+                            </div>
+                        </Card>
+                    </div>
+                </div>
+            </div>
+        );
+
+        const WhatSlide = () => (
+            <div className="h-full flex flex-col">
+                <SectionTitle subtitle="Operational Model">
+                    数字与物理的<span className="text-[#C64191] bg-[#F0F3BD] px-2 italic">双向循环</span>
+                </SectionTitle>
+
+                <div className="flex-grow flex items-center justify-center relative py-4">
+                    <div className="relative w-full grid md:grid-cols-3 gap-6 items-stretch">
+                        
+                        <div className="bg-white p-8 rounded-none border border-[#1A5E63]/20 hover:border-[#00BFB2] transition-colors relative group">
+                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-100 transition-opacity text-[#00BFB2]">
+                                <span className="text-4xl font-serif font-bold">01</span>
+                            </div>
+                            <div className="w-12 h-12 bg-[#00BFB2]/10 text-[#00BFB2] flex items-center justify-center rounded-full mb-6">
+                                <Icons.Smartphone size={24} />
+                            </div>
+                            <h3 className="text-xl font-bold text-[#1A5E63] mb-1">数字层 (Online)</h3>
+                            <p className="text-xs text-[#028090] font-bold uppercase tracking-wider mb-6">Initiate & Record</p>
+                            <ul className="text-sm text-[#1A5E63]/80 space-y-3">
+                                <li className="flex gap-2 items-center"><span className="w-1.5 h-1.5 bg-[#00BFB2] rounded-full"></span>小程序预约报名</li>
+                                <li className="flex gap-2 items-center"><span className="w-1.5 h-1.5 bg-[#00BFB2] rounded-full"></span><strong>AI 助手</strong> 辅助记录</li>
+                                <li className="flex gap-2 items-center"><span className="w-1.5 h-1.5 bg-[#00BFB2] rounded-full"></span>内容云端共创</li>
+                            </ul>
+                        </div>
+
+                        <div className="flex flex-col justify-center items-center relative z-10 py-8 md:py-0">
+                            <div className="absolute top-1/2 left-0 w-full h-[1px] bg-[#1A5E63]/20 -z-10 hidden md:block"></div>
+                            
+                            <div className="bg-[#1A5E63] text-[#F0F3BD] p-6 rounded-full shadow-[0_0_0_8px_#F0F3BD] w-48 h-48 flex flex-col items-center justify-center text-center gap-2 hover:scale-105 transition-transform duration-500">
+                                <Icons.Database size={32} className="text-[#00BFB2]" />
+                                <div className="font-serif font-bold text-lg leading-tight">城事<br/>档案库</div>
+                                <div className="text-[9px] uppercase tracking-widest text-[#00BFB2]">Data Asset</div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-8 rounded-none border border-[#1A5E63]/20 hover:border-[#C64191] transition-colors relative group">
+                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-100 transition-opacity text-[#C64191]">
+                                <span className="text-4xl font-serif font-bold">02</span>
+                            </div>
+                            <div className="w-12 h-12 bg-[#C64191]/10 text-[#C64191] flex items-center justify-center rounded-full mb-6">
+                                <Icons.MapPin size={24} />
+                            </div>
+                            <h3 className="text-xl font-bold text-[#1A5E63] mb-1">物理层 (Offline)</h3>
+                            <p className="text-xs text-[#C64191] font-bold uppercase tracking-wider mb-6">Connect & Experience</p>
+                            <ul className="text-sm text-[#1A5E63]/80 space-y-3">
+                                <li className="flex gap-2 items-center"><span className="w-1.5 h-1.5 bg-[#C64191] rounded-full"></span>城市行走实施</li>
+                                <li className="flex gap-2 items-center"><span className="w-1.5 h-1.5 bg-[#C64191] rounded-full"></span><strong>“串门”</strong> 真实对话</li>
+                                <li className="flex gap-2 items-center"><span className="w-1.5 h-1.5 bg-[#C64191] rounded-full"></span>场景体验与展览</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+                    {[
+                        { num: '200+', label: '青年行动者', color: '#1A5E63' },
+                        { num: '12+', label: '标准化路线', color: '#028090' },
+                        { num: '30+', label: '多媒体记录', color: '#00BFB2' },
+                        { num: '5000+', label: '数字足迹触达', color: '#C64191' }
+                    ].map((item, i) => (
+                        <div key={i} className="bg-[#FAFAF9] p-4 border-l-2" style={{ borderColor: item.color }}>
+                            <div className="text-2xl font-serif font-bold mb-1" style={{ color: item.color }}>{item.num}</div>
+                            <div className="text-xs font-bold text-[#1A5E63]/60 uppercase tracking-wider">{item.label}</div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+
+        const HowSlide = () => {
+            const phases = [
+                { id: '01', title: '筹备与征集', date: 'Feb - Mar', desc: '发布路线征集令，启动首批评审；上线小程序MVP。', highlight: false },
+                { id: '02', title: '行走与记录', date: 'Apr - Jul', desc: '每月高频组织线下行走；全员配备AI助手实现“过程即记录”。', highlight: false },
+                { id: '03', title: '策展与发布', date: 'Aug - Sep', desc: '99公益节爆点：发布“行行行城事地图”；举办线下共创展览。', highlight: true },
+                { id: '04', title: '运营与迭代', date: 'Oct - Jan', desc: '开放路线自主运维；建立“城行小组”自运转机制。', highlight: false },
+            ];
+
+            return (
+                <div className="h-full flex flex-col">
+                    <SectionTitle subtitle="Execution Roadmap">
+                        2026 执行路线图
+                    </SectionTitle>
+
+                    <div className="flex-grow grid md:grid-cols-4 gap-4 items-stretch">
+                        {phases.map((phase) => (
+                            <div 
+                                key={phase.id} 
+                                className={`relative p-6 flex flex-col justify-between transition-all duration-500 group border-t-4 hover:-translate-y-2 ${
+                                    phase.highlight 
+                                        ? 'bg-[#1A5E63] text-[#F0F3BD] border-t-[#C64191] shadow-xl' 
+                                        : 'bg-white text-[#1A5E63] border-t-[#028090] shadow-sm hover:shadow-md'
+                                }`}
+                            >
+                                <div>
+                                    <div className="flex justify-between items-baseline mb-8">
+                                        <span className={`text-6xl font-serif font-bold opacity-30 ${phase.highlight ? 'text-[#00BFB2]' : 'text-[#028090]'}`}>
+                                            {phase.id}
+                                        </span>
+                                        <span className={`text-[10px] font-bold uppercase tracking-widest py-1 px-2 border ${
+                                            phase.highlight ? 'border-[#00BFB2] text-[#00BFB2]' : 'border-[#1A5E63]/20 text-[#1A5E63]/60'
+                                        }`}>
+                                            {phase.date}
+                                        </span>
+                                    </div>
+                                    <h3 className="text-lg font-bold mb-3 tracking-wide">{phase.title}</h3>
+                                    <p className={`text-sm leading-relaxed ${phase.highlight ? 'text-[#F0F3BD]/80' : 'text-[#1A5E63]/70'}`}>
+                                        {phase.desc}
+                                    </p>
+                                </div>
+                                
+                                {phase.highlight && (
+                                    <div className="mt-6 pt-4 border-t border-[#F0F3BD]/20 text-xs font-bold text-[#C64191] uppercase tracking-widest flex items-center gap-2">
+                                        <Icons.Sparkles size={14} /> Key Milestone
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        const NeedsSlide = () => (
+            <div className="h-full flex flex-col">
+                <SectionTitle subtitle="Resource Allocation">
+                    高杠杆投入：<br/>小额资助撬动<span className="text-[#C64191] font-serif italic pr-2">海量资产</span>
+                </SectionTitle>
+
+                <div className="grid md:grid-cols-2 gap-8 h-full">
+                    <div className="space-y-8 bg-[#F0F3BD]/30 p-8 border border-[#F0F3BD] rounded-xl">
+                        <div className="flex items-end justify-between border-b-2 border-[#1A5E63] pb-4">
+                            <h3 className="text-xl font-bold text-[#1A5E63]">总计预估</h3>
+                            <div className="text-4xl font-serif font-bold text-[#C64191]">¥35,000</div>
+                        </div>
+                        
+                        <div className="space-y-6 pt-2">
+                            {[
+                                { label: '青年路线资助', val: '¥9,600', sub: '12组 x 800元' },
+                                { label: '展览制作费', val: '¥15,000', sub: '物料/场地/搭建' },
+                                { label: '传播与推广', val: '¥10,000', sub: '线上投放/社群' }
+                            ].map((item, i) => (
+                                <div key={i} className="flex justify-between items-center">
+                                    <div>
+                                        <div className="font-bold text-[#1A5E63] text-lg">{item.label}</div>
+                                        <div className="text-xs text-[#028090] font-bold uppercase mt-1">{item.sub}</div>
+                                    </div>
+                                    <div className="font-mono font-medium text-[#1A5E63] bg-white px-4 py-2 shadow-sm">
+                                        {item.val}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col gap-6">
+                        <Card variant="white" className="flex-1 border-l-4 border-l-[#00BFB2] flex flex-col justify-center">
+                            <h4 className="font-bold text-[#1A5E63] mb-3 flex items-center gap-2 text-lg">
+                                <Icons.Cpu size={24} className="text-[#00BFB2]" /> 技术策略
+                            </h4>
+                            <p className="text-sm text-[#1A5E63]/80 leading-relaxed">
+                                拒绝重度开发。复用成熟低代码平台或 API（高德地图、钉钉语音转写），仅开发轻量级小程序前端，最大化降低技术成本。
+                            </p>
+                        </Card>
+                        
+                        <Card variant="white" className="flex-1 border-l-4 border-l-[#C64191] flex flex-col justify-center">
+                            <h4 className="font-bold text-[#1A5E63] mb-3 flex items-center gap-2 text-lg">
+                                <Icons.ShieldCheck size={24} className="text-[#C64191]" /> 风险控制
+                            </h4>
+                            <ul className="text-sm text-[#1A5E63]/80 space-y-3">
+                                <li className="flex gap-3 items-center">
+                                    <span className="text-[#C64191] font-bold">/</span> 
+                                    <span><strong>安全性：</strong>强制保险 + 行前培训</span>
+                                </li>
+                                <li className="flex gap-3 items-center">
+                                    <span className="text-[#C64191] font-bold">/</span> 
+                                    <span><strong>同质化：</strong>设立“场景多样性”评审标准</span>
+                                </li>
+                                <li className="flex gap-3 items-center">
+                                    <span className="text-[#C64191] font-bold">/</span> 
+                                    <span><strong>可持续：</strong>工具包开源，赋能其他县域复制</span>
+                                </li>
+                            </ul>
+                        </Card>
+                    </div>
+                </div>
+            </div>
+        );
+
+        const SummarySlide = () => (
+            <div className="h-full flex flex-col justify-center items-center text-center max-w-4xl mx-auto">
+                <div className="mb-8 relative group">
+                    <div className="absolute inset-0 bg-[#C64191] blur-[60px] opacity-20 group-hover:opacity-40 transition-opacity duration-1000"></div>
+                    <Icons.Heart size={80} className="text-[#C64191] relative z-10 drop-shadow-2xl" fill="#C64191" />
+                </div>
+
+                <h2 className="text-4xl md:text-6xl font-serif text-[#1A5E63] mb-8 leading-tight">
+                    这不仅仅是一个项目，<br/>
+                    而是一份<span className="text-[#F0F3BD] bg-[#1A5E63] px-4 italic">技术向善</span>的答卷。
+                </h2>
+
+                <p className="text-xl text-[#028090] max-w-2xl mb-16 leading-relaxed">
+                    我们用数据连接孤岛，用行走丈量温度。<br/>
+                    安可青年 · 行行行 —— 让每一个脚印都成为社区的数字资产。
+                </p>
+
+                <div className="grid md:grid-cols-3 gap-8 text-left w-full border-t border-[#1A5E63]/20 pt-8">
+                    {[
+                        { title: '有温度的数字化', desc: 'Tech for Connection' },
+                        { title: '可迭代的创新', desc: 'Scalable Model' },
+                        { title: '可视化的影响力', desc: 'Visualized Impact' }
+                    ].map((item, i) => (
+                        <div key={i} className="group">
+                            <div className="font-bold text-[#1A5E63] text-lg group-hover:text-[#C64191] transition-colors">{item.title}</div>
+                            <div className="text-xs font-bold text-[#00BFB2] uppercase tracking-widest mt-2">{item.desc}</div>
+                        </div>
+                    ))}
+                </div>
+                
+                <div className="mt-20 text-[#1A5E63]/30 text-[10px] tracking-[0.3em] uppercase">
+                    End of Proposal · 2026
+                </div>
+            </div>
+        );
+
+        // --- 主入口 ---
+        const Presentation = () => {
+            const [activeTab, setActiveTab] = useState('cover');
+            const [mounted, setMounted] = useState(false);
+
+            useEffect(() => {
+                setMounted(true);
+            }, []);
+
+            const navItems = [
+                { id: 'cover', label: '首页 · Cover' },
+                { id: 'why', label: '背景 · Context' },
+                { id: 'what', label: '模式 · Model' },
+                { id: 'how', label: '规划 · Plan' },
+                { id: 'needs', label: '资源 · Needs' },
+                { id: 'summary', label: '结语 · Vision' },
+            ];
+
+            const renderContent = () => {
+                switch (activeTab) {
+                    case 'cover': return <CoverSlide onStart={() => setActiveTab('why')} />;
+                    case 'why': return <WhySlide />;
+                    case 'what': return <WhatSlide />;
+                    case 'how': return <HowSlide />;
+                    case 'needs': return <NeedsSlide />;
+                    case 'summary': return <SummarySlide />;
+                    default: return <CoverSlide />;
+                }
+            };
+
+            if (!mounted) return <div className="p-10 text-center text-[#1A5E63]">Loading...</div>;
+
+            return (
+                <div className="flex flex-col min-h-screen font-sans selection:bg-[#00BFB2] selection:text-white" style={{ backgroundColor: COLORS.offWhite, color: COLORS.dark }}>
+                    
+                    {/* 顶部导航 */}
+                    <nav className="fixed top-0 left-0 right-0 z-50 px-4 md:px-8 py-4 flex justify-between items-center bg-[#FAFAF9]/90 backdrop-blur-md border-b border-[#1A5E63]/10">
+                        <div className="flex items-center gap-2 text-[#1A5E63]">
+                            <div className="bg-[#1A5E63] text-[#F0F3BD] p-1.5 rounded-lg">
+                                <Icons.Footprints size={20} />
+                            </div>
+                            <span className="font-bold text-lg tracking-tight">行行行 <span className="opacity-40 font-serif font-normal text-base">| 小城漫步集</span></span>
+                        </div>
+                        
+                        <div className="hidden md:flex gap-1">
+                            {navItems.map((item) => (
+                                <button
+                                    key={item.id}
+                                    onClick={() => setActiveTab(item.id)}
+                                    className={`px-4 py-1.5 rounded-full text-xs font-bold tracking-wide transition-all duration-300 ${
+                                        activeTab === item.id 
+                                            ? 'bg-[#1A5E63] text-[#F0F3BD] shadow-md' 
+                                            : 'text-[#028090] hover:bg-[#F0F3BD] hover:text-[#1A5E63]'
+                                    }`}
+                                >
+                                    {item.label}
+                                </button>
+                            ))}
+                        </div>
+                    </nav>
+
+                    {/* 移动端导航 */}
+                    <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90%] bg-[#1A5E63] p-2 rounded-full shadow-2xl flex justify-between items-center px-4">
+                        {navItems.map((item) => (
+                            <button
+                                key={item.id}
+                                onClick={() => setActiveTab(item.id)}
+                                className={`w-2 h-2 rounded-full transition-all duration-300 ${activeTab === item.id ? 'bg-[#C64191] w-4' : 'bg-[#028090]'}`}
+                                aria-label={item.label}
+                            />
+                        ))}
+                        <span className="text-[10px] text-[#F0F3BD] font-bold ml-2 uppercase tracking-wider">
+                            {navItems.find(n => n.id === activeTab)?.label.split(' · ')[1]}
+                        </span>
+                    </div>
+
+                    {/* 主画布 */}
+                    <main className="flex-grow flex flex-col relative pt-20 pb-8 px-4 md:px-12 max-w-7xl mx-auto w-full">
+                        <div className="flex-grow relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                            {renderContent()}
+                        </div>
+                        <AbstractBg />
+                    </main>
+                </div>
+            );
+        };
+
+        // 渲染 App
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<Presentation />);
+    </script>
+</body>
+</html>
