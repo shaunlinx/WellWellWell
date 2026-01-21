@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>安可青年 · 行行行小城漫步集 - 2026年度提案</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Inter:wght@400;500;700&display=swap');
+        
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+        h1, h2, h3, .font-serif { font-family: 'Noto Serif SC', serif; }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f5f5f4; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #d6d3d1; border-radius: 20px; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-in { animation: fadeIn 0.6s ease-out forwards; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- 配色常量 ---
+        const COLORS = {
+            highlight: '#00BFB2', // 亮青
+            dark: '#1A5E63',      // 深青
+            secondary: '#028090', // 海藻绿
+            light: '#F0F3BD',     // 嫩芽黄
+            pop: '#C64191',       // 洋红
+            white: '#FFFFFF',
+            offWhite: '#FAFAF9',
+        };
+
+        // --- 图标组件 (内置SVG，无依赖) ---
+        const IconWrapper = ({ children, size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                {children}
+            </svg>
+        );
+
+        // 基础图标
+        const Icons = {
+            Footprints: (p) => <IconWrapper {...p}><path d="M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 11 3.8 11 8c0 2.85-1.21 7.1-2.8 11.54C11 21.37 12 23 12 23" /><path d="M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 13 7.8 13 12c0 2.85 1.21 7.1 2.8 11.54C13 25.37 12 27 12 27" transform="translate(0 -4)" /></IconWrapper>,
+            Users: (p) => <IconWrapper {...p}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></IconWrapper>,
+            Target: (p) => <IconWrapper {...p}><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></IconWrapper>,
+            Heart: (p) => <IconWrapper {...p}><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" /></IconWrapper>,
+            MapPin: (p) => <IconWrapper {...p}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></IconWrapper>,
+            Sparkles: (p) => <IconWrapper {...p}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" /></IconWrapper>,
+            ArrowRight: (p) => <IconWrapper {...p}><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></IconWrapper>,
+            Coffee: (p) => <IconWrapper {...p}><path d="M17 8h1a4 4 0 1 1 0 8h-1" /><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" /><line x1="6" x2="6" y1="2" y2="4" /><line x1="10" x2="10" y1="2" y2="4" /><line x1="14" x2="14" y1="2" y2="4" /></IconWrapper>,
+            Briefcase: (p) => <IconWrapper {...p}><rect width="20" height="14" x="2" y="7" rx="2" ry="2" /><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /></IconWrapper>,
+            EyeOff: (p) => <IconWrapper {...p}><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" /><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" /><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" /><line x1="2" x2="22" y1="2" y2="22" /></IconWrapper>,
+            Cpu: (p) => <IconWrapper {...p}><rect x="4" y="4" width="16" height="16" rx="2" /><path d="M9 9h6v6H9z" /><path d="M15 2v2M15 20v2M2 15h2M2 9h2M20 15h2M20 9h2M9 2v2M9 20v2" /></IconWrapper>
+        };
+
+        // --- 背景组件 ---
+        const AbstractBg = () => (
+            <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-[0.04]">
+                <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" strokeWidth="1"/>
+                    </pattern>
+                    <rect width="100%" height="100%" fill="url(#grid)" />
+                    <circle cx="80%" cy="20%" r="300" fill="currentColor" className="opacity-30 blur-3xl" />
+                    <circle cx="10%" cy="80%" r="200" fill="currentColor" className="opacity-30 blur-3xl" />
+                </svg>
+            </div>
+        );
+
+        // --- 通用 UI 组件 ---
+        const SectionTitle = ({ children, subtitle, dark = false }) => (
+            <div className="mb-10 relative z-10">
+                <div className="flex items-center gap-3 mb-3">
+                    <div className={`h-[2px] w-12 ${dark ? 'bg-[#00BFB2]' : 'bg-[#C64191]'}`}></div>
+                    <h2 className={`text-xs font-bold tracking-[0.2em] uppercase ${dark ? 'text-[#00BFB2]' : 'text-[#C64191]'}`}>
+                        {subtitle}
+                    </h2>
+                </div>
+                <h1 className={`text-3xl md:text-5xl font-serif font-medium leading-tight ${dark ? 'text-[#F0F3BD]' : 'text-[#1A5E63]'}`}>
+                    {children}
+                </h1>
+            </div>
+        );
+
+        const Card = ({ children, className = "", variant = "white" }) => {
+            const styles = {
+                white: "bg-white border-[#F0F3BD]",
+                light: "bg-[#F0F3BD] border-transparent",
+                dark: "bg-[#1A5E63] text-white border-[#028090]",
+                pop: "bg-[#C64191] text-white border-transparent"
+            };
+            return (
+                <div className={`p-6 md:p-8 rounded-xl border shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${styles[variant]} ${className}`}>
+                    {children}
+                </div>
+            );
+        };
+
+        // --- 页面内容组件 ---
+
+        // 1. 首页
+        const CoverSlide = ({ onStart }) => (
+            <div className="h-full min-h-[70vh] flex flex-col justify-center relative">
+                <div className="absolute top-0 right-0 font-serif text-[120px] md:text-[240px] leading-none text-[#F0F3BD] select-none -z-10 mix-blend-multiply opacity-80">
+                    2026
+                </div>
+
+                <div className="max-w-4xl space-y-8 relative">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#1A5E63] text-[#F0F3BD] text-xs font-bold uppercase tracking-[0.2em] shadow-lg">
+                        <Icons.Sparkles size={14} />
+                        Anke Youth Special Project
+                    </div>
+                    
+                    <h1 className="text-5xl md:text-7xl font-serif text-[#1A5E63] leading-[1.1] tracking-tight">
+                        <span className="block text-2xl md:text-3xl text-[#028090] font-sans font-light mb-4 tracking-normal">三人行必有「我都行」</span>
+                        行行行<br />
+                        <span className="text-[#C64191] italic pr-4">小城</span>漫步集
+                    </h1>
+                    
+                    <div className="flex items-start gap-4 max-w-2xl mt-8">
+                        <div className="w-1 h-20 bg-[#00BFB2]"></div>
+                        <p className="text-lg md:text-xl text-[#028090] font-light leading-relaxed">
+                            在TA的时间线同行。<br/>
+                            感受脚下行走的每一步，看见身边同行的每个TA。
+                        </p>
+                    </div>
+
+                    <div className="pt-10">
+                        <button 
+                            onClick={onStart}
+                            className="group relative inline-flex items-center justify-center px-10 py-5 bg-[#C64191] text-white rounded-none hover:bg-[#A33476] transition-all duration-300 shadow-[8px_8px_0px_0px_#1A5E63] hover:shadow-[4px_4px_0px_0px_#1A5E63] hover:translate-x-[2px] hover:translate-y-[2px]"
+                        >
+                            <span className="relative flex items-center gap-3 font-bold text-lg tracking-wide">
+                                开始提案
+                                <Icons.ArrowRight size={20} />
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+
+        // 2. 战略背景
+        const WhySlide = () => (
+            <div>
+                <SectionTitle subtitle="Strategic Context">
+                    从“串门”到<span className="italic text-[#028090] font-serif">“行动闭环”</span>
+                </SectionTitle>
+
+                <div className="grid md:grid-cols-2 gap-8 h-full">
+                    <Card variant="dark" className="flex flex-col relative overflow-hidden group">
+                         <div className="absolute -right-6 -bottom-6 text-[#00BFB2] opacity-10">
+                            <Icons.Target size={200} />
+                        </div>
+                        <h3 className="text-xl font-bold text-[#F0F3BD] mb-4 flex items-center gap-2">
+                            <span className="w-2 h-2 bg-[#C64191] rounded-full"></span>
+                            演变路径
+                        </h3>
+                        <div className="space-y-6 relative z-10">
+                            <div className="border-l-2 border-[#028090] pl-4 opacity-60">
+                                <div className="text-xs uppercase tracking-widest text-[#00BFB2] mb-1">PAST · 过去</div>
+                                <div className="font-serif text-lg">主理人请接招 / 青年对话</div>
+                                <div className="text-sm mt-1">形式：有组织串门（活动）+ 无组织串门（对话）</div>
+                            </div>
+                            <div className="border-l-2 border-[#C64191] pl-4">
+                                <div className="text-xs uppercase tracking-widest text-[#C64191] mb-1">PRESENT · 现在</div>
+                                <div className="font-serif text-2xl font-bold">丰富形式 + 集合呈现</div>
+                                <div className="text-sm mt-2">
+                                    <span className="bg-[#028090] px-2 py-1 text-[10px] rounded mr-2">行动</span>
+                                    资助 - 提案 - 采集
+                                    <br/>
+                                    <span className="bg-[#028090] px-2 py-1 text-[10px] rounded mr-2">呈现</span>
+                                    行动互动展览 (Action Exhibition)
+                                </div>
+                            </div>
+                        </div>
+                    </Card>
+
+                    <div className="flex flex-col gap-4">
+                        <Card variant="light" className="flex-1">
+                            <div className="flex items-center justify-between mb-2">
+                                <h4 className="font-bold text-[#1A5E63]">C 端 (青年)</h4>
+                                <Icons.Users size={18} className="text-[#028090]" />
+                            </div>
+                            <p className="text-sm text-[#1A5E63]/80">
+                                想要有意思、有深度的行动。为个人行动获得推助。<br/>
+                                <span className="text-[#C64191] font-bold">关键词：招募、召集、筛选</span>
+                            </p>
+                        </Card>
+                        <Card variant="white" className="flex-1">
+                            <div className="flex items-center justify-between mb-2">
+                                <h4 className="font-bold text-[#1A5E63]">B 端 (资方/品牌)</h4>
+                                <Icons.Target size={18} className="text-[#028090]" />
+                            </div>
+                            <p className="text-sm text-[#1A5E63]/80">
+                                营销/影响力回报。筛选有生命力的差异化内容。<br/>
+                                <span className="text-[#C64191] font-bold">关键词：应用场景、品牌透出</span>
+                            </p>
+                        </Card>
+                         <Card variant="white" className="flex-1 border-l-4 border-l-[#C64191]">
+                            <div className="flex items-center justify-between mb-2">
+                                <h4 className="font-bold text-[#1A5E63]">G 端 (基金会)</h4>
+                                <Icons.Heart size={18} className="text-[#C64191]" />
+                            </div>
+                            <p className="text-sm text-[#1A5E63]/80">
+                                意向力的活动与站台机会。<br/>
+                                <span className="text-[#C64191] font-bold">关键节点：结合99公益节最大化发声</span>
+                            </p>
+                        </Card>
+                    </div>
+                </div>
+            </div>
+        );
+
+        // 3. 模式创新
+        const WhatSlide = () => (
+            <div className="h-full flex flex-col">
+                <SectionTitle subtitle="Oh! Whole Lab">
+                    看见交点，形成交集，<span className="text-[#C64191] bg-[#F0F3BD] px-2 italic">促成交流</span>
+                </SectionTitle>
+
+                <div className="grid md:grid-cols-3 gap-6 mb-8">
+                    {/* 日常篇 */}
+                    <div className="bg-white p-6 border-t-4 border-t-[#00BFB2] shadow-sm hover:shadow-md transition-all group">
+                        <div className="flex items-center gap-3 mb-4 text-[#1A5E63]">
+                            <div className="p-2 bg-[#00BFB2]/10 rounded-lg text-[#00BFB2]"><Icons.Coffee size={24} /></div>
+                            <h3 className="font-bold text-lg">日常篇 · 生活</h3>
+                        </div>
+                        <ul className="space-y-3 text-sm text-[#1A5E63]/70">
+                            <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 bg-[#00BFB2] rounded-full"></span><strong>咖啡/茶馆行：</strong>第三空间与熟人社交</li>
+                            <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 bg-[#00BFB2] rounded-full"></span><strong>遛狗行：</strong>宠物友好路线</li>
+                            <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 bg-[#00BFB2] rounded-full"></span><strong>早餐/摄影行：</strong>扫街与美食玩家</li>
+                        </ul>
+                    </div>
+
+                    {/* 出行篇 */}
+                    <div className="bg-white p-6 border-t-4 border-t-[#1A5E63] shadow-sm hover:shadow-md transition-all group">
+                         <div className="flex items-center gap-3 mb-4 text-[#1A5E63]">
+                            <div className="p-2 bg-[#1A5E63]/10 rounded-lg text-[#1A5E63]"><Icons.Briefcase size={24} /></div>
+                            <h3 className="font-bold text-lg">出行篇 · 差旅</h3>
+                        </div>
+                        <ul className="space-y-3 text-sm text-[#1A5E63]/70">
+                            <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 bg-[#1A5E63] rounded-full"></span><strong>乡村行：</strong>跟我回老家</li>
+                            <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 bg-[#1A5E63] rounded-full"></span><strong>出差行：</strong>解锁差旅B面</li>
+                            <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 bg-[#1A5E63] rounded-full"></span><strong>产地行：</strong>女性创业者行动设计</li>
+                        </ul>
+                    </div>
+
+                    {/* 公益篇 */}
+                    <div className="bg-white p-6 border-t-4 border-t-[#C64191] shadow-sm hover:shadow-md transition-all group">
+                         <div className="flex items-center gap-3 mb-4 text-[#1A5E63]">
+                            <div className="p-2 bg-[#C64191]/10 rounded-lg text-[#C64191]"><Icons.EyeOff size={24} /></div>
+                            <h3 className="font-bold text-lg">公益篇 · 关怀</h3>
+                        </div>
+                        <ul className="space-y-3 text-sm text-[#1A5E63]/70">
+                            <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 bg-[#C64191] rounded-full"></span><strong>摸瞎行：</strong>夜行友好与视障体验</li>
+                            <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 bg-[#C64191] rounded-full"></span><strong>老城/废墟行：</strong>重拾城市记忆</li>
+                            <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 bg-[#C64191] rounded-full"></span><strong>旧物行：</strong>旧物里看家乡</li>
+                        </ul>
+                    </div>
+                </div>
+
+                {/* 最小行动闭环 */}
+                <div className="bg-[#FAFAF9] p-6 rounded-xl border border-[#1A5E63]/10 flex flex-col md:flex-row items-center justify-between text-center md:text-left gap-4">
+                    <div>
+                        <div className="text-xs font-bold text-[#00BFB2] uppercase tracking-widest mb-1">Minimum Viable Loop</div>
+                        <div className="text-[#1A5E63] font-medium">小额资助前端串门行动 <span className="text-[#C64191] mx-2">+</span> 后端 AI 行动助手 <span className="text-[#C64191] mx-2">→</span> 行动者互动展览</div>
+                    </div>
+                     <div className="text-2xl font-serif font-bold text-[#1A5E63] bg-white px-6 py-2 rounded-lg shadow-sm border border-[#F0F3BD]">
+                        Oh! Whole Lab
+                    </div>
+                </div>
+            </div>
+        );
+
+        // 4. 执行规划
+        const HowSlide = () => {
+            const phases = [
+                { id: 'Q1', title: '发起征集 (2-3月)', date: '行动预热', desc: '利用已有素材（10篇专访）预热；发布“行行行”串门提案；确定领队记录形式与路线。', highlight: false },
+                { id: 'Q2', title: '召集行动 (4-6月)', date: '行动实施', desc: '召集接招人，建立“城行小组”；单次招募成行；线上AI+志愿者共创加工素材。', highlight: false },
+                { id: 'Q3', title: '行动策展 (7-9月)', date: '99公益节', desc: '互动展览结构：行动回顾 + 互动展 + 共创市集。发布“行行行城事地图”。', highlight: true },
+                { id: 'Q4', title: '持续运营 (10-1月)', date: '社群自转', desc: '场景化社群：“今天我要去XX，有人一起吗？”；小程序持续归档故事。', highlight: false },
+            ];
+
+            return (
+                <div className="h-full flex flex-col">
+                    <SectionTitle subtitle="Execution Roadmap">
+                        2026 执行路线图
+                    </SectionTitle>
+
+                    <div className="flex-grow grid md:grid-cols-4 gap-4 items-stretch">
+                        {phases.map((phase) => (
+                            <div 
+                                key={phase.id} 
+                                className={`relative p-5 flex flex-col justify-between transition-all duration-500 group border-t-4 hover:-translate-y-2 ${
+                                    phase.highlight 
+                                        ? 'bg-[#1A5E63] text-[#F0F3BD] border-t-[#C64191] shadow-xl' 
+                                        : 'bg-white text-[#1A5E63] border-t-[#028090] shadow-sm hover:shadow-md'
+                                }`}
+                            >
+                                <div>
+                                    <div className="flex justify-between items-baseline mb-6">
+                                        <span className={`text-4xl font-serif font-bold opacity-30 ${phase.highlight ? 'text-[#00BFB2]' : 'text-[#028090]'}`}>
+                                            {phase.id}
+                                        </span>
+                                        <span className={`text-[10px] font-bold uppercase tracking-widest py-1 px-2 border rounded ${
+                                            phase.highlight ? 'border-[#00BFB2] text-[#00BFB2]' : 'border-[#1A5E63]/20 text-[#1A5E63]/60'
+                                        }`}>
+                                            {phase.date}
+                                        </span>
+                                    </div>
+                                    <h3 className="text-lg font-bold mb-3 tracking-wide">{phase.title}</h3>
+                                    <p className={`text-sm leading-relaxed ${phase.highlight ? 'text-[#F0F3BD]/80' : 'text-[#1A5E63]/70'}`}>
+                                        {phase.desc}
+                                    </p>
+                                </div>
+                                
+                                {phase.highlight && (
+                                    <div className="mt-4 pt-4 border-t border-[#F0F3BD]/20 text-xs font-bold text-[#C64191] uppercase tracking-widest flex items-center gap-2">
+                                        <Icons.Sparkles size={14} /> Key Node
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        // 5. 资源风控
+        const NeedsSlide = () => (
+            <div className="h-full flex flex-col">
+                <SectionTitle subtitle="Resources & Partners">
+                    首期路线探索：<br/>小额资助 <span className="text-[#C64191] font-serif italic">500-1000元</span> / 组
+                </SectionTitle>
+
+                <div className="grid md:grid-cols-2 gap-8 h-full">
+                    <div className="space-y-8 bg-[#F0F3BD]/30 p-8 border border-[#F0F3BD] rounded-xl">
+                        <div className="flex items-center justify-between border-b-2 border-[#1A5E63] pb-4">
+                            <h3 className="text-xl font-bold text-[#1A5E63]">资助包含</h3>
+                            <div className="text-sm font-bold text-[#C64191] uppercase tracking-wide">Micro-Grants</div>
+                        </div>
+                        
+                        <div className="space-y-4 pt-2">
+                            {[
+                                { label: '串门支出', desc: '点位消费、物料支持' },
+                                { label: '基础保障', desc: '参与者强制保险' },
+                                { label: '人员补助', desc: '领队/志愿者补贴' }
+                            ].map((item, i) => (
+                                <div key={i} className="flex justify-between items-center p-3 bg-white/50 rounded-lg">
+                                    <div className="font-bold text-[#1A5E63]">{item.label}</div>
+                                    <div className="text-xs text-[#028090]">{item.desc}</div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="text-xs text-[#1A5E63]/60 pt-2 border-t border-[#1A5E63]/10">
+                            * 预计支持 12 组种子路线
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col gap-6">
+                        <Card variant="white" className="flex-1 border-l-4 border-l-[#00BFB2] flex flex-col justify-center">
+                            <h4 className="font-bold text-[#1A5E63] mb-3 flex items-center gap-2 text-lg">
+                                <Icons.Cpu size={24} className="text-[#00BFB2]" /> 意向合作资方
+                            </h4>
+                            <div className="grid grid-cols-2 gap-3 text-sm text-[#1A5E63]/80">
+                                <div><span className="font-bold text-[#028090]">旅行类：</span>携程 / 华住 / 飞猪</div>
+                                <div><span className="font-bold text-[#028090]">记录类：</span>影石 Insta360</div>
+                                <div><span className="font-bold text-[#028090]">足迹类：</span>高德地图</div>
+                                <div><span className="font-bold text-[#028090]">AI工具：</span>一颗豆 / 钉钉</div>
+                            </div>
+                        </Card>
+                        
+                        <Card variant="white" className="flex-1 border-l-4 border-l-[#C64191] flex flex-col justify-center">
+                            <h4 className="font-bold text-[#1A5E63] mb-3 flex items-center gap-2 text-lg">
+                                <Icons.Heart size={24} className="text-[#C64191]" /> 可持续造血
+                            </h4>
+                            <p className="text-sm text-[#1A5E63]/80 leading-relaxed">
+                                获得「行行行」认证路线后，可上线自主运维。
+                                <br/>
+                                <span className="font-bold text-[#C64191]">公益收费项：</span>行动素材共享 + 志愿者服务 + AI中央厨房加工
+                            </p>
+                        </Card>
+                    </div>
+                </div>
+            </div>
+        );
+
+        // 6. 结语
+        const SummarySlide = () => (
+            <div className="h-full flex flex-col justify-center items-center text-center max-w-4xl mx-auto">
+                <div className="mb-8 relative group">
+                    <div className="absolute inset-0 bg-[#C64191] blur-[60px] opacity-20 group-hover:opacity-40 transition-opacity duration-1000"></div>
+                    <Icons.Heart size={80} className="text-[#C64191] relative z-10 drop-shadow-2xl" fill="#C64191" />
+                </div>
+
+                <h2 className="text-4xl md:text-6xl font-serif text-[#1A5E63] mb-6 leading-tight">
+                    TA一直在我的时间线里，<br/>
+                    这次我想邀请你<span className="text-[#F0F3BD] bg-[#1A5E63] px-3 italic">来到我的世界</span>。
+                </h2>
+
+                <p className="text-xl text-[#028090] max-w-2xl mb-12 leading-relaxed">
+                    看见交点 · 形成交集 · 促成交流<br/>
+                    安可青年 —— 让每一次“行”都成为“行”。
+                </p>
+
+                <div className="grid md:grid-cols-3 gap-8 text-left w-full border-t border-[#1A5E63]/20 pt-8">
+                    {[
+                        { title: '有温度的连接', desc: 'Connecting People' },
+                        { title: '可沉淀的资产', desc: 'Digital Assets' },
+                        { title: '可视化的影响', desc: 'Visual Impact' }
+                    ].map((item, i) => (
+                        <div key={i} className="group text-center md:text-left">
+                            <div className="font-bold text-[#1A5E63] text-lg group-hover:text-[#C64191] transition-colors">{item.title}</div>
+                            <div className="text-xs font-bold text-[#00BFB2] uppercase tracking-widest mt-2">{item.desc}</div>
+                        </div>
+                    ))}
+                </div>
+                
+                <div className="mt-20 text-[#1A5E63]/30 text-[10px] tracking-[0.3em] uppercase">
+                    Oh! Whole Lab · 2026
+                </div>
+            </div>
+        );
+
+        // --- 主程序 ---
+        const Presentation = () => {
+            const [activeTab, setActiveTab] = useState('cover');
+            const [mounted, setMounted] = useState(false);
+
+            useEffect(() => { setMounted(true); }, []);
+
+            const navItems = [
+                { id: 'cover', label: '首页 · Cover' },
+                { id: 'why', label: '背景 · Context' },
+                { id: 'what', label: '模式 · Model' },
+                { id: 'how', label: '规划 · Plan' },
+                { id: 'needs', label: '资源 · Needs' },
+                { id: 'summary', label: '结语 · Vision' },
+            ];
+
+            const renderContent = () => {
+                switch (activeTab) {
+                    case 'cover': return <CoverSlide onStart={() => setActiveTab('why')} />;
+                    case 'why': return <WhySlide />;
+                    case 'what': return <WhatSlide />;
+                    case 'how': return <HowSlide />;
+                    case 'needs': return <NeedsSlide />;
+                    case 'summary': return <SummarySlide />;
+                    default: return <CoverSlide />;
+                }
+            };
+
+            if (!mounted) return <div className="p-10 text-center text-[#1A5E63]">Loading...</div>;
+
+            return (
+                <div className="flex flex-col min-h-screen font-sans selection:bg-[#00BFB2] selection:text-white" style={{ backgroundColor: COLORS.offWhite, color: COLORS.dark }}>
+                    <nav className="fixed top-0 left-0 right-0 z-50 px-4 md:px-8 py-4 flex justify-between items-center bg-[#FAFAF9]/90 backdrop-blur-md border-b border-[#1A5E63]/10">
+                        <div className="flex items-center gap-2 text-[#1A5E63]">
+                            <div className="bg-[#1A5E63] text-[#F0F3BD] p-1.5 rounded-lg"><Icons.Footprints size={20} /></div>
+                            <span className="font-bold text-lg tracking-tight">行行行 <span className="opacity-40 font-serif font-normal text-base hidden md:inline">| 小城漫步集</span></span>
+                        </div>
+                        <div className="flex gap-1 overflow-x-auto max-w-[60%] md:max-w-none no-scrollbar">
+                            {navItems.map((item) => (
+                                <button key={item.id} onClick={() => setActiveTab(item.id)} className={`px-4 py-1.5 rounded-full text-xs font-bold tracking-wide transition-all duration-300 whitespace-nowrap ${activeTab === item.id ? 'bg-[#1A5E63] text-[#F0F3BD] shadow-md' : 'text-[#028090] hover:bg-[#F0F3BD] hover:text-[#1A5E63]'}`}>
+                                    {item.label}
+                                </button>
+                            ))}
+                        </div>
+                    </nav>
+
+                    <main className="flex-grow flex flex-col relative pt-20 pb-8 px-4 md:px-12 max-w-7xl mx-auto w-full">
+                        <div className="flex-grow relative z-10 animate-in">
+                            {renderContent()}
+                        </div>
+                        <AbstractBg />
+                    </main>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<Presentation />);
+    </script>
+</body>
+</html>
